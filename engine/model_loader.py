@@ -22,7 +22,7 @@ def load_model():
     if _model is None:
         _model = AutoModelForCausalLM.from_pretrained(
             MODEL_NAME,
-            torch_dtype=torch.float32,
+            torch_dtype=torch.float32, # means weights are stored as 32-bit floating-point values
         )
         _model.eval()
 

@@ -1,23 +1,43 @@
+from threading import Thread
+
 import torch
+from transformers import TextIteratorStreamer
 
 from engine.model_loader import load_model, load_tokenizer
 
 
 @torch.inference_mode()
-def generate(prompt: str, max_new_tokens: int = 100) -> str:
+def generate(
+    prompt: str,
+    max_new_tokens: int,
+    output_handler,
+):
+
     tokenizer = load_tokenizer()
     model = load_model()
 
     inputs = tokenizer(prompt, return_tensors="pt")
 
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=max_new_tokens,
-    )
-
-    generated_text = tokenizer.decode(
-        outputs[0],
+    streamer = TextIteratorStreamer(
+        tokenizer,
+        skip_prompt=True,
         skip_special_tokens=True,
     )
 
-    return generated_text
+    thread = Thread(
+        target=model.generate,
+        kwargs={
+            **inputs,
+            "streamer": streamer,
+            "max_new_tokens": max_new_tokens,
+        },
+    )
+
+    thread.start()
+
+    for text in streamer:
+        output_handler.on_text(text)
+
+    thread.join()
+
+    return output_handler.finish()
