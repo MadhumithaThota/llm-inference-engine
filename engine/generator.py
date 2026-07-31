@@ -22,6 +22,7 @@ def generate(
         tokenizer,
         skip_prompt=True,
         skip_special_tokens=True,
+        timeout=60.0,
     )
 
     thread = Thread(

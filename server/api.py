@@ -5,7 +5,10 @@ from fastapi.responses import StreamingResponse
 from engine.scheduler import scheduler
 import engine.worker
 from engine.request import GenerationRequest
-
+from engine.output_handler import (
+    BufferedOutputHandler,
+    StreamingOutputHandler,
+)
 app = FastAPI(
     title="LLM Inference Engine",
     version="0.1.0",
@@ -16,8 +19,14 @@ def health():
     return {"status": "ok"}
 
 
+
 @app.post("/generate")
 def generate_text(request: GenerateRequest):
+
+    if request.stream:
+        handler = StreamingOutputHandler()
+    else:
+        handler = BufferedOutputHandler()
 
     generation_request = GenerationRequest(
         prompt=request.prompt,
@@ -25,16 +34,16 @@ def generate_text(request: GenerateRequest):
         stream=request.stream,
     )
 
-    future = scheduler.submit(generation_request)
+    generation_request.output_handler = handler
 
-    result = future.result()
+    scheduler.submit(generation_request)
 
     if request.stream:
         return StreamingResponse(
-            result,
+            handler.generator(),
             media_type="text/plain",
         )
 
-    return GenerateResponse(
-        response=result,
-    )
+    result = generation_request.future.result()
+
+    return GenerateResponse(response=result)

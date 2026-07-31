@@ -9,16 +9,10 @@ class GenerationEngine:
 
     def generate(self, request):
 
-        if request.stream:
-            handler = StreamingOutputHandler()
-        else:
-            handler = BufferedOutputHandler()
-
         return generate(
             request.prompt,
             request.max_new_tokens,
-            handler,
+            request.output_handler,
         )
-
 
 generation_engine = GenerationEngine()

@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from queue import Queue
+
 
 class OutputHandler(ABC):
 
@@ -9,6 +11,7 @@ class OutputHandler(ABC):
     @abstractmethod
     def finish(self):
         pass
+
 
 class BufferedOutputHandler(OutputHandler):
 
@@ -21,17 +24,24 @@ class BufferedOutputHandler(OutputHandler):
     def finish(self):
         return "".join(self.parts)
 
+
 class StreamingOutputHandler(OutputHandler):
 
     def __init__(self):
-        self.stream = []
+        self.queue = Queue()
 
     def on_text(self, text):
-        self.stream.append(text)
+        self.queue.put(text)
 
     def finish(self):
-        def generator():
-            for text in self.stream:
-                yield text
+        # Signal that streaming is complete
+        self.queue.put(None)
 
-        return generator()
+    def generator(self):
+        while True:
+            text = self.queue.get()
+
+            if text is None:
+                break
+
+            yield text
