@@ -13,6 +13,7 @@ class GenerationEngine:
             request.prompt,
             request.max_new_tokens,
             request.output_handler,
+            request.kv_cache,
         )
 
 generation_engine = GenerationEngine()

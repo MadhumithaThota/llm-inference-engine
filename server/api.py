@@ -1,7 +1,8 @@
 from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
 
 from server.schemas import GenerateRequest, GenerateResponse
-from fastapi.responses import StreamingResponse
+
 from engine.scheduler import scheduler
 import engine.worker
 from engine.request import GenerationRequest
@@ -9,6 +10,8 @@ from engine.output_handler import (
     BufferedOutputHandler,
     StreamingOutputHandler,
 )
+from engine.kv_cache import KVCache
+
 app = FastAPI(
     title="LLM Inference Engine",
     version="0.1.0",
@@ -35,6 +38,7 @@ def generate_text(request: GenerateRequest):
     )
 
     generation_request.output_handler = handler
+    generation_request.kv_cache = KVCache()
 
     scheduler.submit(generation_request)
 
