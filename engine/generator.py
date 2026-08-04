@@ -1,89 +1,8 @@
-from threading import Thread
 
 import torch
-from transformers import TextIteratorStreamer
 
 from engine.model_loader import load_model, load_tokenizer
-import time
-
-def sample_next_token(
-    logits,
-    temperature,
-    top_k,
-    top_p,
-):
-    if temperature <= 0:
-        raise ValueError("temperature must be greater than 0")
-
-    logits = logits / temperature
-
-    # -----------------------
-    # Top-k
-    # -----------------------
-    if top_k > 0:
-        values, _ = torch.topk(logits, k=top_k)
-
-        min_topk = values[:, -1].unsqueeze(-1)
-
-        logits = torch.where(
-            logits < min_topk,
-            torch.full_like(logits, float("-inf")),
-            logits,
-        )
-
-    # -----------------------
-    # Top-p
-    # -----------------------
-
-    if top_p < 1.0:
-
-        # Sort logits
-        sorted_logits, sorted_indices = torch.sort(
-            logits,
-            descending=True,
-        )
-
-        # Convert to probabilities
-        sorted_probs = torch.softmax(
-            sorted_logits,
-            dim=-1,
-        )
-
-        # Running cumulative probability
-        cumulative_probs = torch.cumsum(
-            sorted_probs,
-            dim=-1,
-        )
-
-        # Remove tokens after top_p
-        sorted_indices_to_remove = cumulative_probs > top_p
-
-        # Always keep the first token above threshold
-        sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
-
-        sorted_indices_to_remove[..., 0] = False
-
-        # Scatter back to original vocabulary order
-        indices_to_remove = sorted_indices_to_remove.scatter(
-            dim=1,
-            index=sorted_indices,
-            src=sorted_indices_to_remove,
-        )
-
-        logits = logits.masked_fill(
-            indices_to_remove,
-            float("-inf"),
-        )
-
-    probs = torch.softmax(
-        logits,
-        dim=-1,
-    )
-
-    return torch.multinomial(
-        probs,
-        num_samples=1,
-    )
+from engine.utils.sampler import sample_next_token
 
 @torch.inference_mode()
 def generate(
@@ -94,6 +13,7 @@ def generate(
     temperature,
     top_k,
     top_p,
+    repetition_penalty,
 ):
     tokenizer = load_tokenizer()
     model = load_model()
@@ -105,7 +25,7 @@ def generate(
         prompt,
         return_tensors="pt",
     ).to(device)
-
+    generated_tokens = inputs["input_ids"][0].tolist()
     # First forward pass processes the entire prompt and creates the initial KV cache.
     outputs = model(
         **inputs,
@@ -118,6 +38,8 @@ def generate(
     # next_token = outputs.logits[:, -1].argmax(dim=-1, keepdim=True)# Get logits for the last token
     next_token = sample_next_token(
         outputs.logits[:, -1],
+        generated_tokens,
+        repetition_penalty,
         temperature,
         top_k,
         top_p,
@@ -135,7 +57,7 @@ def generate(
             next_token[0],
             skip_special_tokens=True,
         )
-
+        generated_tokens.append(next_token.item())
         if text:
             output_handler.on_text(text)
 
@@ -155,10 +77,13 @@ def generate(
 
         next_token = sample_next_token(
             outputs.logits[:, -1],
+            generated_tokens,
+            repetition_penalty,
             temperature,
             top_k,
             top_p,
         )
+        
 
     # Clear the cache after the request completes.
     kv_cache.clear()
