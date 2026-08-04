@@ -115,7 +115,7 @@ pytest
 - [x] Unified generation pipeline
 - [ ] Dynamic batch builder
 - [ ] Batched inference
-- [ ] KV Cache
+- [x] KV Cache
 - [ ] Continuous batching
 - [ ] Tensor parallelism
 - [ ] Quantization

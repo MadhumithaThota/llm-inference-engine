@@ -13,6 +13,7 @@ def generate(
     max_new_tokens: int,
     output_handler,
     kv_cache,
+    temperature,
 ):
     tokenizer = load_tokenizer()
     model = load_model()
@@ -34,7 +35,21 @@ def generate(
     kv_cache.update(outputs.past_key_values)
 
     # Select the first generated token using greedy decoding.
-    next_token = outputs.logits[:, -1].argmax(dim=-1, keepdim=True)
+    # next_token = outputs.logits[:, -1].argmax(dim=-1, keepdim=True)# Get logits for the last token
+    logits = outputs.logits[:, -1]
+
+    # Apply temperature scaling
+    logits = logits / temperature
+
+    # Convert logits to probabilities
+    probs = torch.softmax(logits, dim=-1)
+
+    # Sample the next token
+    next_token = torch.multinomial(
+        probs,
+        num_samples=1,
+    )
+
 
     for _ in range(max_new_tokens):
 
@@ -63,7 +78,24 @@ def generate(
         kv_cache.update(outputs.past_key_values)
 
         # Greedily select the next token.
-        next_token = outputs.logits[:, -1].argmax(dim=-1, keepdim=True)
+        #next_token = outputs.logits[:, -1].argmax(dim=-1, keepdim=True)
+
+        # Get logits for the last token
+        logits = outputs.logits[:, -1]
+
+        # Apply temperature scaling
+        if temperature <= 0:
+            raise ValueError("temperature must be greater than 0")
+        logits = logits / temperature
+
+        # Convert logits to probabilities
+        probs = torch.softmax(logits, dim=-1)
+
+        # Sample the next token
+        next_token = torch.multinomial(
+            probs,
+            num_samples=1,
+        )
 
     # Clear the cache after the request completes.
     kv_cache.clear()

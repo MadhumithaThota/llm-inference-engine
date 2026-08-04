@@ -9,3 +9,4 @@ class GenerationRequest:
     stream: bool = False
     future: Future | None = None
     kv_cache: KVCache | None = None
+    temperature: float = 1.0

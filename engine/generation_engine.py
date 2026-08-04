@@ -14,6 +14,7 @@ class GenerationEngine:
             request.max_new_tokens,
             request.output_handler,
             request.kv_cache,
+            request.temperature,
         )
 
 generation_engine = GenerationEngine()

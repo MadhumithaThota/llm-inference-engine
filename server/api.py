@@ -35,6 +35,7 @@ def generate_text(request: GenerateRequest):
         prompt=request.prompt,
         max_new_tokens=request.max_new_tokens,
         stream=request.stream,
+        temperature=request.temperature,
     )
 
     generation_request.output_handler = handler
