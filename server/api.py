@@ -37,7 +37,8 @@ def generate_text(request: GenerateRequest):
         stream=request.stream,
         temperature=request.temperature,
         top_k=request.top_k,
-        top_p=request.top_p
+        top_p=request.top_p,
+        repetition_penalty=request.repetition_penalty,
     )
 
     generation_request.output_handler = handler

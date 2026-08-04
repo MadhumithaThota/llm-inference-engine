@@ -17,6 +17,7 @@ class GenerationEngine:
             request.temperature,
             request.top_k,
             request.top_p,
+            request.repetition_penalty,
         )
 
 generation_engine = GenerationEngine()

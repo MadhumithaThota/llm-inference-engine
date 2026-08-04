@@ -12,3 +12,4 @@ class GenerationRequest:
     temperature: float = 1.0
     top_k: int = 0
     top_p: float = 1.0
+    repetition_penalty: float = 1.0

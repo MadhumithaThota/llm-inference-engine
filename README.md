@@ -113,9 +113,10 @@ pytest
 - [x] Request queue
 - [x] Background worker
 - [x] Unified generation pipeline
+- [x] KV Cache
+- [x] Sampling(Temperature, Top-K, Top-P, Repetition Penalty)
 - [ ] Dynamic batch builder
 - [ ] Batched inference
-- [x] KV Cache
 - [ ] Continuous batching
 - [ ] Tensor parallelism
 - [ ] Quantization
