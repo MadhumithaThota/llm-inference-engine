@@ -80,18 +80,14 @@ def generate(
         # Greedily select the next token.
         #next_token = outputs.logits[:, -1].argmax(dim=-1, keepdim=True)
 
-        # Get logits for the last token
         logits = outputs.logits[:, -1]
 
-        # Apply temperature scaling
         if temperature <= 0:
             raise ValueError("temperature must be greater than 0")
         logits = logits / temperature
 
-        # Convert logits to probabilities
         probs = torch.softmax(logits, dim=-1)
 
-        # Sample the next token
         next_token = torch.multinomial(
             probs,
             num_samples=1,
