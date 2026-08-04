@@ -36,6 +36,8 @@ def generate_text(request: GenerateRequest):
         max_new_tokens=request.max_new_tokens,
         stream=request.stream,
         temperature=request.temperature,
+        top_k=request.top_k,
+        top_p=request.top_p
     )
 
     generation_request.output_handler = handler

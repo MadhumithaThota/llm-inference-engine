@@ -10,3 +10,5 @@ class GenerationRequest:
     future: Future | None = None
     kv_cache: KVCache | None = None
     temperature: float = 1.0
+    top_k: int = 0
+    top_p: float = 1.0

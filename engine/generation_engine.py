@@ -15,6 +15,8 @@ class GenerationEngine:
             request.output_handler,
             request.kv_cache,
             request.temperature,
+            request.top_k,
+            request.top_p,
         )
 
 generation_engine = GenerationEngine()
