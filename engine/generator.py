@@ -1,8 +1,9 @@
-
 import torch
 
 from engine.model_loader import load_model, load_tokenizer
 from engine.utils.sampler import sample_next_token
+from engine.metrics import Metrics
+
 
 @torch.inference_mode()
 def generate(
@@ -15,6 +16,10 @@ def generate(
     top_p,
     repetition_penalty,
 ):
+    # Create metrics for this request
+    metrics = Metrics()
+    metrics.start()
+
     tokenizer = load_tokenizer()
     model = load_model()
 
@@ -25,7 +30,12 @@ def generate(
         prompt,
         return_tensors="pt",
     ).to(device)
+
+    metrics.prompt_tokens = inputs["input_ids"].shape[1]
+
+    # Store prompt token ids for repetition penalty.
     generated_tokens = inputs["input_ids"][0].tolist()
+
     # First forward pass processes the entire prompt and creates the initial KV cache.
     outputs = model(
         **inputs,
@@ -34,8 +44,7 @@ def generate(
 
     kv_cache.update(outputs.past_key_values)
 
-    # Select the first generated token using greedy decoding.
-    # next_token = outputs.logits[:, -1].argmax(dim=-1, keepdim=True)# Get logits for the last token
+    # Generate the first token.
     next_token = sample_next_token(
         outputs.logits[:, -1],
         generated_tokens,
@@ -45,35 +54,39 @@ def generate(
         top_p,
     )
 
-
     for _ in range(max_new_tokens):
 
-        # Stop generation if the model predicts the EOS token.
+        # Stop generation if EOS token is produced.
         if next_token.item() == tokenizer.eos_token_id:
             break
 
-        # Decode and stream the generated token.
+        # Decode generated token.
         text = tokenizer.decode(
             next_token[0],
             skip_special_tokens=True,
         )
+
         generated_tokens.append(next_token.item())
+
+        # Stream/output generated text.
         if text:
+
+            # Record TTFT only once.
+            if metrics.generated_tokens == 0:
+                metrics.first_token()
+
+            metrics.generated_tokens += 1
+
             output_handler.on_text(text)
 
-        # For subsequent iterations, only the latest token is passed.
-        # The KV cache contains all previous attention states.
+        # Generate next token using the KV cache.
         outputs = model(
             input_ids=next_token,
             past_key_values=kv_cache.get(),
             use_cache=True,
         )
 
-        # Update the cache with the newly computed keys and values.
         kv_cache.update(outputs.past_key_values)
-
-        # Greedily select the next token.
-        #next_token = outputs.logits[:, -1].argmax(dim=-1, keepdim=True)
 
         next_token = sample_next_token(
             outputs.logits[:, -1],
@@ -83,51 +96,15 @@ def generate(
             top_k,
             top_p,
         )
-        
 
-    # Clear the cache after the request completes.
+    metrics.finish()
+
+    # Clear cache after request completion.
     kv_cache.clear()
 
-    return output_handler.finish()
-
-"""
-def generate(
-    prompt: str,
-    max_new_tokens: int,
-    output_handler,
-    kv_cache,
-):
-
-    print("1. Loading tokenizer")
-    tokenizer = load_tokenizer()
-
-    print("2. Loading model")
-    model = load_model()
-
-    print("3. Tokenizing")
-    inputs = tokenizer(prompt, return_tensors="pt")
-
-    streamer = TextIteratorStreamer(
-        tokenizer,
-        skip_prompt=True,
-        skip_special_tokens=True,
-        timeout=60.0,
-    )
-    thread = Thread(
-        target=model.generate,
-        kwargs={
-            **inputs,
-            "streamer": streamer,
-            "max_new_tokens": max_new_tokens,
-        },
-    )
-    thread.start()
-
-    for text in streamer:
-        output_handler.on_text(text)
-
-    thread.join()
+    print(metrics.to_dict())
     
-
-    return output_handler.finish()
-"""
+    return {
+        "response": output_handler.finish(),
+        "metrics": metrics.to_dict(),
+    }
