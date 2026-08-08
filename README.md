@@ -1,131 +1,162 @@
 # LLM Inference Engine
 
-A production-inspired LLM inference engine built from scratch using Python and PyTorch.
+A from-scratch, production-inspired LLM inference engine built with Python, PyTorch, and FastAPI.
 
-The goal of this project is to understand and implement the core components behind modern inference systems such as vLLM and TensorRT-LLM instead of simply wrapping Hugging Face models.
+The project focuses on the systems behind modern serving runtimes: request scheduling, token-by-token decoding, KV caching, sampling, streaming, and batching. It is designed as a learning-oriented implementation rather than a wrapper around a hosted model API.
 
-Current features include:
+## Highlights
 
-- FastAPI REST API
-- Streaming text generation
-- Request scheduler
-- Background worker
-- Request queue
-- Modular generation pipeline
-
----
+- FastAPI generation endpoint with interactive Swagger documentation
+- Buffered and streaming text generation
+- Background worker, request queue, and scheduler
+- Manual token decoding with configurable sampling
+- Per-request KV cache
+- Modular engine components for experimentation
 
 ## Tech Stack
 
 - Python 3.12
-- PyTorch
-- Hugging Face Transformers
-- FastAPI
-- Uvicorn
+- PyTorch and Hugging Face Transformers
+- FastAPI and Uvicorn
 - Pydantic
 
----
+## Getting Started
 
-## Setup
-
-### Clone repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/<your-username>/llm-inference-engine.git
 cd llm-inference-engine
 ```
 
-### Create virtual environment
+### 2. Create and activate a virtual environment
 
 ```bash
-python3 -m venv .venv
+python -m venv .venv
 ```
 
-Linux/macOS
+Linux/macOS:
 
 ```bash
 source .venv/bin/activate
 ```
 
-Windows PowerShell
+Windows PowerShell:
 
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
-### Install dependencies
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
-
-## Run
+### 4. Start the server
 
 ```bash
 uvicorn server.api:app --reload
 ```
 
-Swagger UI
+The API is available at `http://127.0.0.1:8000` and Swagger UI at `http://127.0.0.1:8000/docs`.
 
+## API Usage
+
+### Health check
+
+```bash
+curl http://127.0.0.1:8000/
 ```
-http://127.0.0.1:8000/docs
+
+### Generate text
+
+Send a non-streaming request to receive the completed response as JSON:
+
+```bash
+curl -X POST http://127.0.0.1:8000/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Explain transformers.",
+    "max_new_tokens": 128,
+    "stream": false,
+    "temperature": 1.0,
+    "top_k": 0,
+    "top_p": 1.0,
+    "repetition_penalty": 1.0
+  }'
 ```
 
----
-
-## Example Request
+Example response:
 
 ```json
 {
-    "prompt": "Explain transformers.",
-    "max_new_tokens": 128,
-    "stream": false
+  "response": "Transformers are ..."
 }
 ```
 
-Streaming request
+Set `"stream": true` to receive generated text as a streaming plain-text response.
 
-```json
-{
-    "prompt": "Explain transformers.",
-    "max_new_tokens": 128,
-    "stream": true
-}
-```
-
----
-
-## Running Tests
+## Tests
 
 ```bash
 pytest
 ```
 
----
-
 ## Roadmap
 
-- [x] REST API
+### Phase 1 - Completed
+
+- [x] Model loading
+- [x] Worker and request queue
+- [x] Manual decoding
+- [x] KV cache
+- [x] Temperature, top-k, and top-p sampling
+- [x] Repetition penalty
 - [x] Streaming generation
-- [x] Request scheduler
-- [x] Request queue
-- [x] Background worker
-- [x] Unified generation pipeline
-- [x] KV Cache
-- [x] Sampling(Temperature, Top-K, Top-P, Repetition Penalty)
+
+### Phase 2
+
+- [x] Performance metrics
+- [ ] Stop sequences
+- [ ] Maximum context length
+- [ ] OpenAI-compatible API
+
+### Phase 3
+
+- [ ] Prefix caching
+- [ ] Cache eviction (LRU/TTL)
+
+### Phase 4
+
 - [ ] Dynamic batch builder
 - [ ] Batched inference
+- [ ] Dynamic scheduler
+
+### Phase 5
+
 - [ ] Continuous batching
+
+### Phase 6
+
+- [ ] Paged KV cache
+
+### Phase 7
+
+- [ ] Quantization (FP16 -> INT8 -> INT4)
+
+### Phase 8
+
 - [ ] Tensor parallelism
-- [ ] Quantization
-- [ ] CUDA kernels
-- [ ] OpenAI-compatible API
+
+### Phase 9
+
+- [ ] CUDA kernels and kernel fusion
+
+### Phase 10
+
 - [ ] Performance benchmarking
 
----
+## Project Goal
 
-## Motivation
-
-This project is an educational implementation of a production-style inference engine. The focus is on understanding scheduling, batching, decoding, and systems design rather than building a chatbot application.
+This repository is an educational path toward a production-style inference engine. The emphasis is on understanding the runtime trade-offs behind scheduling, batching, decoding, and memory management.

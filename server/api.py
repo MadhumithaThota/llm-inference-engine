@@ -52,6 +52,4 @@ def generate_text(request: GenerateRequest):
             media_type="text/plain",
         )
 
-    result = generation_request.future.result()
-
-    return GenerateResponse(response=result)
+    return generation_request.future.result()
