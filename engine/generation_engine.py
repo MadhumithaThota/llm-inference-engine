@@ -12,6 +12,7 @@ class GenerationEngine:
         return generate(
             request.prompt,
             request.max_new_tokens,
+            request.max_context_length,
             request.output_handler,
             request.kv_cache,
             request.temperature,

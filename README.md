@@ -79,6 +79,7 @@ curl -X POST http://127.0.0.1:8000/generate \
   -d '{
     "prompt": "Explain transformers.",
     "max_new_tokens": 128,
+    "max_context_length": 2048,
     "stream": false,
     "temperature": 1.0,
     "top_k": 0,
@@ -127,7 +128,7 @@ pytest
 
 - [x] Performance metrics
 - [x] Stop sequences
-- [ ] Maximum context length
+- [x] Maximum context length
 - [ ] OpenAI-compatible API
 
 ### Phase 3

@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 
 from server.schemas import GenerateRequest, GenerateResponse
@@ -34,6 +34,7 @@ def generate_text(request: GenerateRequest):
     generation_request = GenerationRequest(
         prompt=request.prompt,
         max_new_tokens=request.max_new_tokens,
+        max_context_length=request.max_context_length,
         stream=request.stream,
         temperature=request.temperature,
         top_k=request.top_k,
@@ -53,6 +54,9 @@ def generate_text(request: GenerateRequest):
             media_type="text/plain",
         )
 
-    result = generation_request.future.result()
+    try:
+        result = generation_request.future.result()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return GenerateResponse(**result)

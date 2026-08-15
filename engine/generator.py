@@ -1,5 +1,10 @@
 import torch
 
+from engine.context_window import (
+    get_max_generation_steps,
+    resolve_max_context_length,
+    validate_prompt_within_context_limit,
+)
 from engine.model_loader import load_model, load_tokenizer
 from engine.utils.sampler import sample_next_token
 from engine.metrics import Metrics
@@ -42,6 +47,7 @@ def _emit_text_buffer(buffer: str, stop_sequences: list[str], final: bool = Fals
 def generate(
     prompt: str,
     max_new_tokens: int,
+    max_context_length: int | None,
     output_handler,
     kv_cache,
     temperature,
@@ -58,6 +64,11 @@ def generate(
     model = load_model()
 
     device = model.device
+    effective_max_context_length = resolve_max_context_length(
+        model,
+        tokenizer,
+        max_context_length,
+    )
 
     # Tokenize the input prompt and move tensors to the model's device.
     inputs = tokenizer(
@@ -65,7 +76,26 @@ def generate(
         return_tensors="pt",
     ).to(device)
 
-    metrics.prompt_tokens = inputs["input_ids"].shape[1]
+    prompt_tokens = inputs["input_ids"].shape[1]
+    metrics.prompt_tokens = prompt_tokens
+    validate_prompt_within_context_limit(prompt_tokens, effective_max_context_length)
+
+    max_generation_steps = get_max_generation_steps(
+        prompt_tokens,
+        max_new_tokens,
+        effective_max_context_length,
+    )
+
+    if max_generation_steps <= 0:
+        metrics.finish()
+        kv_cache.clear()
+
+        result = {
+            "response": output_handler.finish(),
+            "metrics": metrics.to_dict(),
+        }
+        print(result["metrics"])
+        return result
 
     # Store prompt token ids for repetition penalty.
     generated_tokens = inputs["input_ids"][0].tolist()
@@ -91,7 +121,7 @@ def generate(
     buffered_text = ""
     stopped_by_sequence = False
 
-    for _ in range(max_new_tokens):
+    for _ in range(max_generation_steps):
 
         if next_token.item() == tokenizer.eos_token_id:
             break
@@ -103,7 +133,7 @@ def generate(
 
         generated_tokens.append(next_token.item())
 
-    # Count the actual generated token
+        # Count the actual generated token.
         if metrics.generated_tokens == 0:
             metrics.first_token()
 
@@ -122,8 +152,6 @@ def generate(
 
         if stopped_by_sequence:
             break
-
-    
 
         # Generate next token using the KV cache.
         outputs = model(
@@ -162,9 +190,11 @@ def generate(
     # Clear cache after request completion.
     kv_cache.clear()
 
-    print(metrics.to_dict())
-    
-    return {
+    result = {
         "response": output_handler.finish(),
         "metrics": metrics.to_dict(),
     }
+
+    print(result["metrics"])
+
+    return result
