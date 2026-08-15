@@ -18,6 +18,7 @@ class GenerationEngine:
             request.top_k,
             request.top_p,
             request.repetition_penalty,
+            request.stop_sequences,
         )
 
 generation_engine = GenerationEngine()
