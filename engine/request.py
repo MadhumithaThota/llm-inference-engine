@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 class GenerationRequest:
     prompt: str
     max_new_tokens: int
+    max_context_length: int | None = None
     stream: bool = False
     future: Future | None = None
     kv_cache: KVCache | None = None

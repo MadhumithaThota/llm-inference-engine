@@ -4,6 +4,11 @@ from pydantic import BaseModel, Field
 class GenerateRequest(BaseModel):
     prompt: str = Field(..., description="Input prompt")
     max_new_tokens: int = Field(default=100, ge=1, le=512)
+    max_context_length: int | None = Field(
+        default=None,
+        ge=1,
+        description="Optional maximum total prompt + generated token length",
+    )
     stream: bool = True
     temperature: float = 1.0
     top_k: int = 0
