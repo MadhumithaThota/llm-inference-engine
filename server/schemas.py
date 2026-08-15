@@ -26,6 +26,9 @@ class MetricsResponse(BaseModel):
     ttft_ms: float
     latency_ms: float
     tokens_per_second: float
+    prefix_cache_hits: int
+    prefix_cache_misses: int
+    prefix_cache_hit_rate: float
 
 
 class GenerateResponse(BaseModel):
