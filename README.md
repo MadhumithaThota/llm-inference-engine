@@ -106,6 +106,32 @@ Example response:
 
 Set `"stream": true` to receive generated text as a streaming plain-text response. Metrics are returned with the buffered JSON response.
 
+### OpenAI-compatible endpoints
+
+The server also exposes OpenAI-style routes:
+
+- `POST /v1/chat/completions`
+- `POST /v1/completions`
+- `GET /v1/models`
+
+Example chat-completions request:
+
+```bash
+curl -X POST http://127.0.0.1:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "Explain transformers in one paragraph."}
+    ],
+    "max_tokens": 128,
+    "stream": false
+  }'
+```
+
+The OpenAI-compatible responses follow the standard `choices` and `usage` shapes, and streaming uses SSE with `data: ...` chunks and a final `[DONE]`.
+
 ## Tests
 
 ```bash
@@ -129,7 +155,7 @@ pytest
 - [x] Performance metrics
 - [x] Stop sequences
 - [x] Maximum context length
-- [ ] OpenAI-compatible API
+- [x] OpenAI-compatible API
 
 ### Phase 3
 

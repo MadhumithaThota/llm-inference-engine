@@ -15,6 +15,11 @@ def worker_loop():
             print("Generation completed")
         except Exception as e:
             print("Worker exception:", e)
+            if request.output_handler is not None:
+                try:
+                    request.output_handler.finish()
+                except Exception:
+                    pass
             request.future.set_exception(e)
         else:
             request.future.set_result(result)
