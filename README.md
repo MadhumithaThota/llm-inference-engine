@@ -83,7 +83,8 @@ curl -X POST http://127.0.0.1:8000/generate \
     "temperature": 1.0,
     "top_k": 0,
     "top_p": 1.0,
-    "repetition_penalty": 1.0
+    "repetition_penalty": 1.0,
+    "stop_sequences": ["###", "\\n\\nUser:"]
   }'
 ```
 
@@ -91,11 +92,18 @@ Example response:
 
 ```json
 {
-  "response": "Transformers are ..."
+  "response": "Transformers are ...",
+  "metrics": {
+    "prompt_tokens": 5,
+    "generated_tokens": 18,
+    "ttft_ms": 412.31,
+    "latency_ms": 1638.77,
+    "tokens_per_second": 10.98
+  }
 }
 ```
 
-Set `"stream": true` to receive generated text as a streaming plain-text response.
+Set `"stream": true` to receive generated text as a streaming plain-text response. Metrics are returned with the buffered JSON response.
 
 ## Tests
 
@@ -118,7 +126,7 @@ pytest
 ### Phase 2
 
 - [x] Performance metrics
-- [ ] Stop sequences
+- [x] Stop sequences
 - [ ] Maximum context length
 - [ ] OpenAI-compatible API
 

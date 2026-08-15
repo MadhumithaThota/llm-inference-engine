@@ -39,6 +39,7 @@ def generate_text(request: GenerateRequest):
         top_k=request.top_k,
         top_p=request.top_p,
         repetition_penalty=request.repetition_penalty,
+        stop_sequences=request.stop_sequences,
     )
 
     generation_request.output_handler = handler
@@ -52,4 +53,6 @@ def generate_text(request: GenerateRequest):
             media_type="text/plain",
         )
 
-    return generation_request.future.result()
+    result = generation_request.future.result()
+
+    return GenerateResponse(**result)
