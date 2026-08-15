@@ -59,6 +59,7 @@ def generate(
     # Create metrics for this request
     metrics = Metrics()
     metrics.start()
+    finish_reason = "length"
 
     tokenizer = load_tokenizer()
     model = load_model()
@@ -93,6 +94,7 @@ def generate(
         result = {
             "response": output_handler.finish(),
             "metrics": metrics.to_dict(),
+            "finish_reason": finish_reason,
         }
         print(result["metrics"])
         return result
@@ -124,6 +126,7 @@ def generate(
     for _ in range(max_generation_steps):
 
         if next_token.item() == tokenizer.eos_token_id:
+            finish_reason = "stop"
             break
 
         text = tokenizer.decode(
@@ -151,6 +154,7 @@ def generate(
             output_handler.on_text(emitted_text)
 
         if stopped_by_sequence:
+            finish_reason = "stop"
             break
 
         # Generate next token using the KV cache.
@@ -193,6 +197,7 @@ def generate(
     result = {
         "response": output_handler.finish(),
         "metrics": metrics.to_dict(),
+        "finish_reason": finish_reason,
     }
 
     print(result["metrics"])
