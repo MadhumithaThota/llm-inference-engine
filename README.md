@@ -4,6 +4,53 @@ A from-scratch, production-inspired LLM inference engine built with Python, PyTo
 
 The project focuses on the systems behind modern serving runtimes: request scheduling, token-by-token decoding, KV caching, sampling, streaming, and batching. It is designed as a learning-oriented implementation rather than a wrapper around a hosted model API.
 
+## What Is an Inference Engine?
+
+An inference engine is the part of a machine learning system that takes a trained model and runs it to produce outputs for new inputs.
+
+In this project, the inference engine is responsible for:
+
+- Loading the model and tokenizer
+- Accepting generation requests
+- Scheduling and batching requests
+- Decoding tokens one step at a time
+- Applying sampling, repetition penalty, and stop sequences
+- Returning streamed or buffered responses
+
+## Usage
+
+### Start the server
+
+```bash
+uvicorn server.api:app --reload
+```
+
+### Generate text
+
+```bash
+curl -X POST http://127.0.0.1:8000/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Explain transformers.",
+    "max_new_tokens": 128,
+    "stream": false
+  }'
+```
+
+### Test batching
+
+Run the batch smoke script from Command Prompt:
+
+```cmd
+D:\Projects\llm-inference-engine\tests\test_batch_requests.cmd
+```
+
+Or run the Python batch demo:
+
+```cmd
+D:\Projects\llm\Scripts\python.exe D:\Projects\llm-inference-engine\test_batch.py
+```
+
 ## Highlights
 
 - FastAPI generation endpoint with interactive Swagger documentation
