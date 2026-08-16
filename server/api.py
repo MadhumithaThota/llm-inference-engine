@@ -209,15 +209,15 @@ def create_chat_completion(request: OpenAIChatCompletionRequest):
                 yield "data: [DONE]\n\n"
                 return
 
-                yield _to_sse(
-                    build_chat_stream_chunk(
-                        model=request.model,
-                        completion_id=completion_id,
-                        created=created,
-                        content=None,
-                        finish_reason=result["finish_reason"],
-                    )
+            yield _to_sse(
+                build_chat_stream_chunk(
+                    model=request.model,
+                    completion_id=completion_id,
+                    created=created,
+                    content=None,
+                    finish_reason=result["finish_reason"],
                 )
+            )
             yield "data: [DONE]\n\n"
 
         return StreamingResponse(
@@ -287,15 +287,15 @@ def create_completion(request: OpenAICompletionRequest):
                 yield "data: [DONE]\n\n"
                 return
 
-                yield _to_sse(
-                    build_completion_stream_chunk(
-                        model=request.model,
-                        completion_id=completion_id,
-                        created=created,
-                        text="",
-                        finish_reason=result["finish_reason"],
-                    )
+            yield _to_sse(
+                build_completion_stream_chunk(
+                    model=request.model,
+                    completion_id=completion_id,
+                    created=created,
+                    text="",
+                    finish_reason=result["finish_reason"],
                 )
+            )
             yield "data: [DONE]\n\n"
 
         return StreamingResponse(

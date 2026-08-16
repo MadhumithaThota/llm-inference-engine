@@ -13,6 +13,7 @@ class PrefixCacheEntry:
     token_ids: tuple[int, ...]
     past_key_values: Any
     last_logits: Any
+    created_at: float
     last_access: float
 
 
@@ -54,7 +55,7 @@ class PrefixCache:
         if self._ttl_seconds is None:
             return False
 
-        return (now - entry.last_access) >= self._ttl_seconds
+        return (now - entry.created_at) >= self._ttl_seconds
 
     def _purge_expired_locked(self):
         if self._ttl_seconds is None or not self._entries:
@@ -62,12 +63,11 @@ class PrefixCache:
 
         now = self._now()
 
-        expired_keys = []
-        for token_ids, entry in self._entries.items():
-            if self._is_expired(entry, now):
-                expired_keys.append(token_ids)
-            else:
-                break
+        expired_keys = [
+            token_ids
+            for token_ids, entry in self._entries.items()
+            if self._is_expired(entry, now)
+        ]
 
         for token_ids in expired_keys:
             self._remove_entry_locked(token_ids)
@@ -162,6 +162,7 @@ class PrefixCache:
                 token_ids=token_tuple,
                 past_key_values=deepcopy(past_key_values),
                 last_logits=deepcopy(last_logits),
+                created_at=now,
                 last_access=now,
             )
             node.entry_key = token_tuple
