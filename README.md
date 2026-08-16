@@ -142,6 +142,29 @@ The OpenAI-compatible responses follow the standard `choices` and `usage` shapes
 pytest
 ```
 
+### Batching smoke test
+
+Run the parallel request harness from Command Prompt:
+
+```cmd
+D:\Projects\llm-inference-engine\tests\test_batch_requests.cmd
+```
+
+This script sends 3 requests at the same time, writes the responses to `response1.json`, `response2.json`, and `response3.json`, and prints scheduler logs in the server console.
+
+If you want to compare it with the Python demo used during development:
+
+```cmd
+D:\Projects\llm\Scripts\python.exe D:\Projects\llm-inference-engine\test_batch.py
+```
+
+For a clearer batching trace, watch for these server log lines:
+
+- `[worker] received requests`
+- `[scheduler] queued request`
+- `[scheduler] started session ...`
+- `[scheduler] completed session ...`
+
 ## Roadmap
 
 ### Phase 1 - Completed
@@ -168,13 +191,13 @@ pytest
 
 ### Phase 4
 
-- [ ] Dynamic batch builder
-- [ ] Batched inference
-- [ ] Dynamic scheduler
+- [x] Dynamic batch builder
+- [x] Batched inference
+- [x] Dynamic scheduler
 
 ### Phase 5
 
-- [ ] Continuous batching
+- [x] Continuous batching
 
 ### Phase 6
 

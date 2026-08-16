@@ -93,6 +93,7 @@ def generate(
     generated_tokens = prompt_token_ids.copy()
 
     prefix_hit = prefix_cache.find_longest_prefix(prompt_token_ids)
+    #prefix_hit = None
     prompt_logits = None
 
     if prefix_hit is not None:
