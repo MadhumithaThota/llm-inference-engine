@@ -11,6 +11,7 @@ The project focuses on the systems behind modern serving runtimes: request sched
 - Background worker, request queue, and scheduler
 - Manual token decoding with configurable sampling
 - Per-request KV cache
+- Prefix caching with LRU and TTL eviction
 - Modular engine components for experimentation
 
 ## Tech Stack
@@ -99,7 +100,10 @@ Example response:
     "generated_tokens": 18,
     "ttft_ms": 412.31,
     "latency_ms": 1638.77,
-    "tokens_per_second": 10.98
+    "tokens_per_second": 10.98,
+    "prefix_cache_hits": 1,
+    "prefix_cache_misses": 0,
+    "prefix_cache_hit_rate": 100.0
   }
 }
 ```
@@ -159,8 +163,8 @@ pytest
 
 ### Phase 3
 
-- [ ] Prefix caching
-- [ ] Cache eviction (LRU/TTL)
+- [x] Prefix caching
+- [x] Cache eviction (LRU/TTL)
 
 ### Phase 4
 

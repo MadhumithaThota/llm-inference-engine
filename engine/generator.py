@@ -6,6 +6,7 @@ from engine.context_window import (
     validate_prompt_within_context_limit,
 )
 from engine.model_loader import load_model, load_tokenizer
+from engine.prefix_cache import prefix_cache
 from engine.utils.sampler import sample_next_token
 from engine.metrics import Metrics
 
@@ -77,6 +78,7 @@ def generate(
         return_tensors="pt",
     ).to(device)
 
+    prompt_token_ids = inputs["input_ids"][0].tolist()
     prompt_tokens = inputs["input_ids"].shape[1]
     metrics.prompt_tokens = prompt_tokens
     validate_prompt_within_context_limit(prompt_tokens, effective_max_context_length)
@@ -85,6 +87,48 @@ def generate(
         prompt_tokens,
         max_new_tokens,
         effective_max_context_length,
+    )
+
+    # Store prompt token ids for repetition penalty.
+    generated_tokens = prompt_token_ids.copy()
+
+    prefix_hit = prefix_cache.find_longest_prefix(prompt_token_ids)
+    prompt_logits = None
+
+    if prefix_hit is not None:
+        metrics.prefix_cache_hit()
+        kv_cache.update(prefix_hit.past_key_values)
+
+        prefix_length = prefix_hit.prefix_length
+
+        if prefix_length == prompt_tokens:
+            prompt_logits = prefix_hit.last_logits
+        else:
+            prompt_suffix = inputs["input_ids"][:, prefix_length:]
+
+            prompt_outputs = model(
+                input_ids=prompt_suffix,
+                past_key_values=kv_cache.get(),
+                use_cache=True,
+            )
+
+            kv_cache.update(prompt_outputs.past_key_values)
+            prompt_logits = prompt_outputs.logits[:, -1]
+    else:
+        metrics.prefix_cache_miss()
+        # First forward pass processes the entire prompt and creates the initial KV cache.
+        prompt_outputs = model(
+            **inputs,
+            use_cache=True,
+        )
+
+        kv_cache.update(prompt_outputs.past_key_values)
+        prompt_logits = prompt_outputs.logits[:, -1]
+
+    prefix_cache.store(
+        prompt_token_ids,
+        kv_cache.get(),
+        prompt_logits,
     )
 
     if max_generation_steps <= 0:
@@ -99,20 +143,9 @@ def generate(
         print(result["metrics"])
         return result
 
-    # Store prompt token ids for repetition penalty.
-    generated_tokens = inputs["input_ids"][0].tolist()
-
-    # First forward pass processes the entire prompt and creates the initial KV cache.
-    outputs = model(
-        **inputs,
-        use_cache=True,
-    )
-
-    kv_cache.update(outputs.past_key_values)
-
     # Generate the first token.
     next_token = sample_next_token(
-        outputs.logits[:, -1],
+        prompt_logits,
         generated_tokens,
         repetition_penalty,
         temperature,

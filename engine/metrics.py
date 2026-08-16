@@ -10,6 +10,8 @@ class Metrics:
 
         self.prompt_tokens = 0
         self.generated_tokens = 0
+        self.prefix_cache_hits = 0
+        self.prefix_cache_misses = 0
 
     def start(self):
         self.start_time = time.perf_counter()
@@ -20,6 +22,12 @@ class Metrics:
 
     def finish(self):
         self.end_time = time.perf_counter()
+
+    def prefix_cache_hit(self):
+        self.prefix_cache_hits += 1
+
+    def prefix_cache_miss(self):
+        self.prefix_cache_misses += 1
 
     def to_dict(self):
 
@@ -43,10 +51,20 @@ class Metrics:
             else 0
         )
 
+        prefix_cache_lookups = self.prefix_cache_hits + self.prefix_cache_misses
+        prefix_cache_hit_rate = (
+            (self.prefix_cache_hits / prefix_cache_lookups) * 100
+            if prefix_cache_lookups > 0
+            else 0
+        )
+
         return {
             "prompt_tokens": self.prompt_tokens,
             "generated_tokens": self.generated_tokens,
             "ttft_ms": round(ttft * 1000, 2),
             "latency_ms": round(latency * 1000, 2),
             "tokens_per_second": round(tps, 2),
+            "prefix_cache_hits": self.prefix_cache_hits,
+            "prefix_cache_misses": self.prefix_cache_misses,
+            "prefix_cache_hit_rate": round(prefix_cache_hit_rate, 2),
         }
