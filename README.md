@@ -248,23 +248,43 @@ For a clearer batching trace, watch for these server log lines:
 
 ### Phase 6
 
-- [ ] Paged KV cache
+- [x] Paged KV cache
+
+Learning-friendly page slicing lives in `engine/paged_kv_cache.py`.
 
 ### Phase 7
 
-- [ ] Quantization (FP16 -> INT8 -> INT4)
+- [x] Quantization (FP16 -> INT8 -> INT4)
+
+Weight-only quantization helpers live in `engine/quantization.py`.
 
 ### Phase 8
 
-- [ ] Tensor parallelism
+- [x] Tensor parallelism
+
+Sharded linear-layer helpers live in `engine/tensor_parallel.py`.
 
 ### Phase 9
 
-- [ ] CUDA kernels and kernel fusion
+- [x] CUDA kernels and kernel fusion
+
+This phase is represented by fused PyTorch helper ops in `engine/fused_ops.py`.
 
 ### Phase 10
 
-- [ ] Performance benchmarking
+- [x] Performance benchmarking
+
+The lightweight benchmark harness lives in `engine/benchmarking.py`.
+
+## Learning Notes
+
+The newest phases are intentionally beginner-friendly:
+
+- The paged KV cache keeps a paged view for learning, while the runtime still uses the normal Hugging Face cache object.
+- Quantization is weight-only and opt-in through `MODEL_QUANT_BITS=8` or `MODEL_QUANT_BITS=4`.
+- Tensor parallelism uses output-sharded linear layers and is also opt-in through `TENSOR_PARALLEL_SHARDS`.
+- The fusion phase gives you simple fused helper functions that are easier to study before writing custom CUDA.
+- The benchmarking helpers are small on purpose so you can extend them with your own experiments.
 
 ## Project Goal
 

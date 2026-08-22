@@ -1,7 +1,11 @@
 import torch
 from threading import RLock
+import os
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from engine.quantization import replace_linear_layers
+from engine.tensor_parallel import apply_tensor_parallelism
 
 MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
 
@@ -58,8 +62,21 @@ def load_model():
         if _model is None:
             _model = AutoModelForCausalLM.from_pretrained(
                 MODEL_NAME,
-                dtype=torch.float32, # means weights are stored as 32-bit floating-point values
+                torch_dtype=torch.float32,  # keep the base model easy to run and inspect
             )
+
+            quant_bits = os.getenv("MODEL_QUANT_BITS")
+            if quant_bits in {"4", "8"}:
+                replace_linear_layers(_model, bits=int(quant_bits))
+
+            shard_count = int(os.getenv("TENSOR_PARALLEL_SHARDS", "1"))
+            if shard_count > 1:
+                apply_tensor_parallelism(
+                    _model,
+                    shard_count=shard_count,
+                    min_out_features=int(os.getenv("TENSOR_PARALLEL_MIN_OUT_FEATURES", "1024")),
+                )
+
             _model.eval()
 
     return _model
